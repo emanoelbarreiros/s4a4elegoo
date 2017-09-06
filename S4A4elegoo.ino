@@ -123,8 +123,9 @@ void sendSensorValues(){
   }
 
   //send analog sensor values
-  for (sensorIndex = 0; sensorIndex < 6; sensorIndex++)
+  for (sensorIndex = 0; sensorIndex < 6; sensorIndex++){
     scratchBoardSensorReport(sensorIndex, sensorValues[sensorIndex]);
+  }
 
   //send digital sensor values
   scratchBoardSensorReport(6, digitalRead(2)?1023:0);
@@ -163,18 +164,16 @@ void readSerialPort(){
       if (actuatorHighByte >= 128) {
         readingSM = 1;
       }
-    }
-    else if (readingSM == 1){
+    } else if (readingSM == 1){
       actuatorLowByte = Serial.read();
       if (actuatorLowByte < 128) {
         readingSM = 2;
-      }
-      else {
+      } else {
         readingSM = 0;
       }
     }
 
-    if (readingSM == 2){
+    if (readingSM == 2) {
       lastDataReceivedTime = millis();
       pin = ((actuatorHighByte >> 3) & 0x0F);
       newVal = ((actuatorHighByte & 0x07) << 7) | (actuatorLowByte & 0x7F);
@@ -198,8 +197,11 @@ void reset() {
 }
 
 void updateActuator(byte pinNumber){
-  if (arduinoPins[pinNumber].type==digital) digitalWrite(pinNumber, arduinoPins[pinNumber].state);
-  else if (arduinoPins[pinNumber].type==pwm) analogWrite(pinNumber, arduinoPins[pinNumber].state);
+  if (arduinoPins[pinNumber].type == digital) {
+    digitalWrite(pinNumber, arduinoPins[pinNumber].state);
+  } else if (arduinoPins[pinNumber].type == pwm) {
+    analogWrite(pinNumber, arduinoPins[pinNumber].state);
+  }
 }
 
 void sendUpdateServomotors(){
@@ -211,8 +213,9 @@ void sendUpdateServomotors(){
 }
 
 void servo (byte pinNumber, byte angle){
-  if (angle != 255)
+  if (angle != 255){
     pulse(pinNumber, (angle * 10) + 600);
+  }
 }
 
 void pulse (byte pinNumber, unsigned int pulseWidth){
