@@ -51,6 +51,7 @@ typedef struct pin {
 };
 
 pin arduinoPins[14];  //Array of struct holding 0-13 pins information
+pin elegooPins[14]; // pin mapping for the elegoo car kit
 
 unsigned long lastDataReceivedTime = millis();
 
@@ -92,6 +93,21 @@ void configurePins()
   arduinoPins[11].type=digital;
   arduinoPins[12].type=digital;
   arduinoPins[13].type=digital;
+
+  elegooPins[0].type=input;
+  elegooPins[1].type=input;
+  elegooPins[2].type=input;
+  elegooPins[3].type=input;
+  elegooPins[4].type=servomotor;
+  elegooPins[5].type=pwm;
+  elegooPins[6].type=digital;
+  elegooPins[7].type=digital;
+  elegooPins[8].type=digital;
+  elegooPins[9].type=digital;
+  elegooPins[10].type=pwm;
+  elegooPins[11].type=digital;
+  elegooPins[12].type=digital;
+  elegooPins[13].type=digital;
 }
 
 void resetPins() {
@@ -188,7 +204,8 @@ void readSerialPort()
       if(arduinoPins[pin].state != newVal)
       {
         arduinoPins[pin].state = newVal;
-        updateActuator(pin);
+        //updateActuator(pin);
+        updateCarState();
       }
       readingSM = 0;
     }
@@ -231,4 +248,63 @@ void pulse (byte pinNumber, unsigned int pulseWidth)
 void checkScratchDisconnection() //the reset is necessary when using an wireless arduino board (because we need to ensure that arduino isn't waiting the actuators state from Scratch) or when scratch isn't sending information (because is how serial port close is detected)
 {
   if (millis() - lastDataReceivedTime > 1000) reset(); //reset state if actuators reception timeout = one second
+}
+
+void leftForward() {
+  analogWrite(5, arduinoPins[5].state);
+  digitalWrite(6,LOW);
+  digitalWrite(7,HIGH);
+}
+
+void rightForward() {
+  analogWrite(10, arduinoPins[6].state);
+  digitalWrite(8,LOW);
+  digitalWrite(9,HIGH);
+}
+
+void leftBack() {
+  analogWrite(5, arduinoPins[5].state);
+  digitalWrite(6,HIGH);
+  digitalWrite(7,LOW);
+}
+
+void rightBack() {
+  analogWrite(10, arduinoPins[6].state);
+  digitalWrite(8,HIGH);
+  digitalWrite(9,LOW);
+}
+
+void leftStop(){
+  digitalWrite(6,LOW);
+  digitalWrite(7,LOW);
+}
+
+void rightStop() {
+  digitalWrite(8,LOW);
+  digitalWrite(9,LOW);
+}
+
+void updateCarState(){
+  if (arduinoPins[10].state == 1) {
+    if (arduinoPins[11].state == 0 && arduinoPins[13].state == 0) {
+      //go forward
+      rightForward();
+      leftForward();
+    } else if (arduinoPins[11].state == 0 && arduinoPins[13].state == 1) {
+      //go backwards
+      rightBack();
+      leftBack();
+    } else if (arduinoPins[11].state == 1 && arduinoPins[13].state == 0) {
+      //turn right
+      rightBack();
+      leftForward();
+    } else if (arduinoPins[11].state == 1 && arduinoPins[13].state == 1) {
+      //turn left
+      rightForward();
+      leftBack();
+    }
+  } else {
+    rightStop();
+    leftStop();
+  }
 }
