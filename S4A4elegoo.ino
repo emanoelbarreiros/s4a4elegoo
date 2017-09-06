@@ -157,28 +157,29 @@ void readSerialPort(){
   static byte actuatorHighByte, actuatorLowByte;
   static byte readingSM = 0;
 
-  if (Serial.available())
-  {
-    if (readingSM == 0)
-    {
+  if (Serial.available()){
+    if (readingSM == 0){
       actuatorHighByte = Serial.read();
-      if (actuatorHighByte >= 128) readingSM = 1;
+      if (actuatorHighByte >= 128) {
+        readingSM = 1;
+      }
     }
-    else if (readingSM == 1)
-    {
+    else if (readingSM == 1){
       actuatorLowByte = Serial.read();
-      if (actuatorLowByte < 128) readingSM = 2;
-      else readingSM = 0;
+      if (actuatorLowByte < 128) {
+        readingSM = 2;
+      }
+      else {
+        readingSM = 0;
+      }
     }
 
-    if (readingSM == 2)
-    {
+    if (readingSM == 2){
       lastDataReceivedTime = millis();
       pin = ((actuatorHighByte >> 3) & 0x0F);
       newVal = ((actuatorHighByte & 0x07) << 7) | (actuatorLowByte & 0x7F);
 
-      if(arduinoPins[pin].state != newVal)
-      {
+      if(arduinoPins[pin].state != newVal){
         arduinoPins[pin].state = newVal;
         //updateActuator(pin);
         updateCarState();
