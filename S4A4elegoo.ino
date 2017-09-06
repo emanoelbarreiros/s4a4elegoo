@@ -51,24 +51,20 @@ typedef struct pin {
 };
 
 pin arduinoPins[14];  //Array of struct holding 0-13 pins information
-pin elegooPins[14]; // pin mapping for the elegoo car kit
 
 unsigned long lastDataReceivedTime = millis();
 
-void setup()
-{
+void setup() {
   Serial.begin(38400);
   Serial.flush();
   configurePins();
   resetPins();
 }
 
-void loop()
-{
+void loop() {
   static unsigned long timerCheckUpdate = millis();
 
-  if (millis()-timerCheckUpdate>=20)
-  {
+  if (millis()-timerCheckUpdate>=20){
     sendUpdateServomotors();
     sendSensorValues();
     timerCheckUpdate=millis();
@@ -77,8 +73,7 @@ void loop()
   readSerialPort();
 }
 
-void configurePins()
-{
+void configurePins(){
   arduinoPins[0].type=input;
   arduinoPins[1].type=input;
   arduinoPins[2].type=input;
@@ -93,21 +88,6 @@ void configurePins()
   arduinoPins[11].type=digital;
   arduinoPins[12].type=digital;
   arduinoPins[13].type=digital;
-
-  elegooPins[0].type=input;
-  elegooPins[1].type=input;
-  elegooPins[2].type=input;
-  elegooPins[3].type=input;
-  elegooPins[4].type=servomotor;
-  elegooPins[5].type=pwm;
-  elegooPins[6].type=digital;
-  elegooPins[7].type=digital;
-  elegooPins[8].type=digital;
-  elegooPins[9].type=digital;
-  elegooPins[10].type=pwm;
-  elegooPins[11].type=digital;
-  elegooPins[12].type=digital;
-  elegooPins[13].type=digital;
 }
 
 void resetPins() {
@@ -130,13 +110,12 @@ void resetPins() {
   }
 }
 
-void sendSensorValues()
-{
+void sendSensorValues(){
   unsigned int sensorValues[6], readings[5];
   byte sensorIndex;
 
-  for (sensorIndex = 0; sensorIndex < 6; sensorIndex++) //for analog sensors, calculate the median of 5 sensor readings in order to avoid variability and power surges
-  {
+  //for analog sensors, calculate the median of 5 sensor readings in order to avoid variability and power surges
+  for (sensorIndex = 0; sensorIndex < 6; sensorIndex++) {
     for (byte p = 0; p < 5; p++)
       readings[p] = analogRead(sensorIndex);
     insertionSort(readings, 5); //sort readings
@@ -145,37 +124,34 @@ void sendSensorValues()
 
   //send analog sensor values
   for (sensorIndex = 0; sensorIndex < 6; sensorIndex++)
-    ScratchBoardSensorReport(sensorIndex, sensorValues[sensorIndex]);
+    scratchBoardSensorReport(sensorIndex, sensorValues[sensorIndex]);
 
   //send digital sensor values
-  ScratchBoardSensorReport(6, digitalRead(2)?1023:0);
-  ScratchBoardSensorReport(7, digitalRead(3)?1023:0);
+  scratchBoardSensorReport(6, digitalRead(2)?1023:0);
+  scratchBoardSensorReport(7, digitalRead(3)?1023:0);
 }
 
-void insertionSort(unsigned int* array, unsigned int n)
-{
+void insertionSort(unsigned int* array, unsigned int n){
   for (int i = 1; i < n; i++)
     for (int j = i; (j > 0) && ( array[j] < array[j-1] ); j--)
       swap( array, j, j-1 );
 }
 
-void swap(unsigned int* array, unsigned int a, unsigned int b)
-{
+void swap(unsigned int* array, unsigned int a, unsigned int b){
   unsigned int temp = array[a];
   array[a] = array[b];
   array[b] = temp;
 }
 
-void ScratchBoardSensorReport(byte sensor, int value) //PicoBoard protocol, 2 bytes per sensor
-{
+//PicoBoard protocol, 2 bytes per sensor
+void spcratchBoardSensorReport(byte sensor, int value){
   Serial.write( B10000000
     | ((sensor & B1111)<<3)
     | ((value>>7) & B111));
   Serial.write( value & B1111111);
 }
 
-void readSerialPort()
-{
+void readSerialPort(){
   byte pin;
   int newVal;
   static byte actuatorHighByte, actuatorLowByte;
@@ -213,41 +189,43 @@ void readSerialPort()
   else checkScratchDisconnection();
 }
 
-void reset() //with xbee module, we need to simulate the setup execution that occurs when a usb connection is opened or closed without this module
-{
+//with xbee module, we need to simulate the setup execution that occurs when a usb connection is opened or closed without this module
+void reset() {
   resetPins();        // reset pins
   sendSensorValues(); // protocol handshaking
   lastDataReceivedTime = millis();
 }
 
-void updateActuator(byte pinNumber)
-{
+void updateActuator(byte pinNumber){
   if (arduinoPins[pinNumber].type==digital) digitalWrite(pinNumber, arduinoPins[pinNumber].state);
   else if (arduinoPins[pinNumber].type==pwm) analogWrite(pinNumber, arduinoPins[pinNumber].state);
 }
 
-void sendUpdateServomotors()
-{
-  for (byte p = 0; p < 10; p++)
-    if (arduinoPins[p].type == servomotor) servo(p, arduinoPins[p].state);
+void sendUpdateServomotors(){
+  for (byte p = 0; p < 10; p++){
+    if (arduinoPins[p].type == servomotor) {
+      servo(p, arduinoPins[p].state);
+    }
+  }
 }
 
-void servo (byte pinNumber, byte angle)
-{
+void servo (byte pinNumber, byte angle){
   if (angle != 255)
     pulse(pinNumber, (angle * 10) + 600);
 }
 
-void pulse (byte pinNumber, unsigned int pulseWidth)
-{
+void pulse (byte pinNumber, unsigned int pulseWidth){
   digitalWrite(pinNumber, HIGH);
   delayMicroseconds(pulseWidth);
   digitalWrite(pinNumber, LOW);
 }
 
-void checkScratchDisconnection() //the reset is necessary when using an wireless arduino board (because we need to ensure that arduino isn't waiting the actuators state from Scratch) or when scratch isn't sending information (because is how serial port close is detected)
-{
-  if (millis() - lastDataReceivedTime > 1000) reset(); //reset state if actuators reception timeout = one second
+void checkScratchDisconnection(){}
+//the reset is necessary when using an wireless arduino board (because we need to ensure that arduino isn't waiting the actuators state from Scratch) or when scratch isn't sending information (because is how serial port close is detected)
+
+  if (millis() - lastDataReceivedTime > 1000) {
+    reset(); //reset state if actuators reception timeout = one second
+  }
 }
 
 void leftForward() {
